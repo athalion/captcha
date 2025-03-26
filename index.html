@@ -22,6 +22,11 @@
             height: auto;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        .instructions {
+            font-size: 16px;
+            color: white;
+            margin-bottom: 10px;
+        }
         .captcha {
             font-size: 24px;
             color: white;
@@ -52,7 +57,6 @@
         button:hover {
             background-color: #0056b3;
         }
-        /* Loading spinner styles */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -90,86 +94,184 @@
     </div>
 
     <div class="captcha-container">
-        <div class="captcha" id="captcha-text">7G5H2</div>
+        <div class="instructions">Please verify that you are human</div>
+        <div class="instructions">by typing the letters below</div>
+        <br>
+        <div class="captcha" id="captcha-text"></div>
         <input type="text" id="captcha-input" placeholder="Enter captcha">
         <button onclick="validateCaptcha()">Submit</button>
         <p id="message" style="color: red; margin-top: 10px;"></p>
+        <button id="playButton" style="margin-top: 10px;">Play</button>
     </div>
 
     <script>
+        let captchaNumber = 0;
+
         // Hide the loading overlay once the page has fully loaded
         window.addEventListener('load', () => {
-            const loadingOverlay = document.getElementById('loading-overlay');
-            loadingOverlay.style.transition = 'opacity 0.5s ease-in-out';
-            loadingOverlay.style.opacity = '0';
             setTimeout(() => {
-                loadingOverlay.style.display = 'none';
-            }, 500);
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.style.transition = 'opacity 0.5s ease-in-out';
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }, 1000);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                validateCaptcha();
+            }
         });
 
         function validateCaptcha() {
             const captchaText = document.getElementById('captcha-text').textContent;
             const userInput = document.getElementById('captcha-input').value;
             const message = document.getElementById('message');
-            const captchaContainer = document.querySelector('.captcha-container');
 
             if (userInput === captchaText) {
-                message.textContent = "Captcha verified!";
-                message.style.color = "green";
+                captchaNumber++;
+                message.textContent = "";
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.style.opacity = '1';
+
+                setTimeout(() => {
+                    message.textContent = "Something went wrong. Try again.";
+                    message.style.color = "red";
+                    loadingOverlay.style.transition = 'opacity 0.5s ease-in-out';
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                    }, 500);
+                    refreshCaptcha();
+                }, 1000);
             } else {
                 message.textContent = "Captcha incorrect. Try again.";
                 message.style.color = "red";
             }
         }
 
-        function refreshCaptcha() {
-            const captchaContainer = document.querySelector('.captcha-container');
+        function refreshCaptcha(type) {
             const captchaText = document.getElementById('captcha-text');
             const captchaInput = document.getElementById('captcha-input');
             const message = document.getElementById('message');
+            const playButton = document.getElementById('playButton');
 
-            // Wrap the captcha content in a container for animation
-            let contentWrapper = document.querySelector('.content-wrapper');
-            if (!contentWrapper) {
-                contentWrapper = document.createElement('div');
-                contentWrapper.className = 'content-wrapper';
-                contentWrapper.style.overflow = 'hidden';
-                contentWrapper.style.position = 'relative';
-                contentWrapper.style.width = '100%';
-                contentWrapper.style.height = '100%';
+            // Reset play button visibility
+            playButton.style.display = 'none';
 
-                // Move existing content into the wrapper
-                while (captchaContainer.firstChild) {
-                    contentWrapper.appendChild(captchaContainer.firstChild);
-                }
-                captchaContainer.appendChild(contentWrapper);
+            // Remove any existing images or additional elements
+            const existingImage = captchaText.nextElementSibling;
+            if (existingImage && existingImage.tagName === 'IMG') {
+                existingImage.remove();
             }
 
-            // Animate the content fading out
-            contentWrapper.style.transition = "opacity 0.5s ease-in-out, transform 0.5s ease-in-out";
-            contentWrapper.style.transform = "translateX(-10%)";
-            contentWrapper.style.opacity = "0";
+            // Randomly decide between text, audio, or image captcha
+            const captchaType = Math.random();
+            if (type) captchaType = type / 3;
+            if (captchaType < 0.33) {
+                // Generate a new audio captcha
+                const audioType = Math.random() > (captchaNumber / 10) ? 'normal' : 'cursed';
+                const audioCaptchaText = Math.random().toString(36).substring(2, 7).toUpperCase();
+                captchaText.textContent = "Click 'Play' to hear the captcha";
 
-            setTimeout(() => {
-                // Generate a new captcha (example: random alphanumeric string)
+                playButton.style.display = 'block';
+                if (audioType === 'cursed') {
+                    playButton.onclick = () => {
+                        const audioUrls = [
+                            "https://www.myinstants.com/media/sounds/cursed-spanish-ad-meme.mp3",
+                            "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3",
+                            // Weitere URLs...
+                        ];
+                        const randomAudioUrl = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+                        const audio = new Audio(randomAudioUrl);
+                        audio.play();
+                    };
+                } else {
+                    playButton.onclick = () => {
+                        const utterance = new SpeechSynthesisUtterance(audioCaptchaText);
+                        utterance.lang = 'en-US';
+                        utterance.rate = 0.9;
+
+                        const synth = window.speechSynthesis;
+                        synth.speak(utterance);
+                    };
+                }
+            } else if (captchaType < 0.66) {
+                // Generate a new text captcha
                 const newCaptcha = Math.random().toString(36).substring(2, 7).toUpperCase();
                 captchaText.textContent = newCaptcha;
+            } else {
+                // Generate a new image captcha
+                const imageCaptchaText = "Select all squares with crosswalks";
+                captchaText.textContent = imageCaptchaText;
 
-                // Reset input and message
-                captchaInput.value = "";
-                message.textContent = "";
+                // Create a grid container for images
+                const gridContainer = document.createElement('div');
+                gridContainer.style.display = 'grid';
+                gridContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                gridContainer.style.gap = '10px';
+                gridContainer.style.marginTop = '10px';
 
-                // Reset position and animate the content fading back in
-                contentWrapper.style.transition = "none";
-                contentWrapper.style.transform = "translateX(10%)";
+                const images = [
+                    { src: 'crosswalk1.jpg', isCorrect: true },
+                    { src: 'noncrosswalk1.jpg', isCorrect: false },
+                    { src: 'crosswalk2.jpg', isCorrect: true },
+                    { src: 'noncrosswalk2.jpg', isCorrect: false },
+                    { src: 'crosswalk3.jpg', isCorrect: true },
+                    { src: 'noncrosswalk3.jpg', isCorrect: false },
+                ];
 
-                setTimeout(() => {
-                    contentWrapper.style.transition = "opacity 0.5s ease-in-out, transform 0.5s ease-in-out";
-                    contentWrapper.style.opacity = "1";
-                    contentWrapper.style.transform = "translateX(0)";
-                }, 50);
-            }, 500);
+                images.sort(() => Math.random() - 0.5);
+
+                images.forEach((image, index) => {
+                    const img = document.createElement('img');
+                    img.src = image.src;
+                    img.alt = `Captcha Image ${index + 1}`;
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+                    img.style.border = '2px solid transparent';
+                    img.style.cursor = 'pointer';
+
+                    img.onclick = () => {
+                        img.style.border = img.style.border === '2px solid green' ? '2px solid transparent' : '2px solid green';
+                        img.dataset.selected = img.dataset.selected === 'true' ? 'false' : 'true';
+                    };
+
+                    gridContainer.appendChild(img);
+                });
+
+                captchaText.parentNode.appendChild(gridContainer);
+
+                const submitButton = document.createElement('button');
+                submitButton.textContent = 'Submit';
+                submitButton.style.marginTop = '10px';
+                submitButton.onclick = () => {
+                    const selectedImages = Array.from(gridContainer.querySelectorAll('img[data-selected="true"]'));
+                    const isValid = selectedImages.every(img => images.find(image => image.src === img.src).isCorrect) &&
+                                    selectedImages.length === images.filter(image => image.isCorrect).length;
+
+                    if (isValid) {
+                        message.textContent = "Captcha solved successfully!";
+                        message.style.color = "green";
+                    } else {
+                        message.textContent = "Captcha incorrect. Try again.";
+                        message.style.color = "red";
+                        setTimeout(() => refreshCaptcha(3), 1000);
+                    }
+                };
+
+                captchaText.parentNode.appendChild(submitButton);
+            }
+
+            // Reset input and message
+            captchaInput.value = "";
+            message.textContent = "";
         }
+
+        refreshCaptcha();
     </script>
 </body>
 </html>
