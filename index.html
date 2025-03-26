@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #242424;
+        }
+        .captcha-container {
+            text-align: center;
+            background: #111111;
+            padding: 20px;
+            border-radius: 8px;
+            height: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .captcha {
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 200px;
+            margin-bottom: 10px;
+            border: 1px solid #007BFF;
+            color: white;
+            background-color: #242424;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition-property: all;
+            transition-duration: 300ms;
+            transition-timing-function: ease-in-out;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="captcha-container">
+        <div class="captcha" id="captcha-text">7G5H2</div>
+        <input type="text" id="captcha-input" placeholder="Enter captcha">
+        <button onclick="validateCaptcha()">Submit</button>
+        <p id="message" style="color: red; margin-top: 10px;"></p>
+    </div>
+
+    <script>
+        function validateCaptcha() {
+            const captchaText = document.getElementById('captcha-text').textContent;
+            const userInput = document.getElementById('captcha-input').value;
+            const message = document.getElementById('message');
+            const captchaContainer = document.querySelector('.captcha-container');
+
+            if (userInput === captchaText) {
+                message.textContent = "Captcha verified!";
+                message.style.color = "green";
+            } else {
+                message.textContent = "Captcha incorrect. Try again.";
+                message.style.color = "red";
+            }
+        }
+
+        function refreshCaptcha() {
+            const captchaContainer = document.querySelector('.captcha-container');
+            const captchaText = document.getElementById('captcha-text');
+            const captchaInput = document.getElementById('captcha-input');
+            const message = document.getElementById('message');
+
+            // Wrap the captcha content in a container for animation
+            let contentWrapper = document.querySelector('.content-wrapper');
+            if (!contentWrapper) {
+                contentWrapper = document.createElement('div');
+                contentWrapper.className = 'content-wrapper';
+                contentWrapper.style.overflow = 'hidden';
+                contentWrapper.style.position = 'relative';
+                contentWrapper.style.width = '100%';
+                contentWrapper.style.height = '100%';
+
+                // Move existing content into the wrapper
+                while (captchaContainer.firstChild) {
+                    contentWrapper.appendChild(captchaContainer.firstChild);
+                }
+                captchaContainer.appendChild(contentWrapper);
+            }
+
+            // Animate the content fading out
+            contentWrapper.style.transition = "opacity 0.5s ease-in-out, transform 0.5s ease-in-out";
+            contentWrapper.style.transform = "translateX(-10%)";
+            contentWrapper.style.opacity = "0";
+
+            setTimeout(() => {
+                // Generate a new captcha (example: random alphanumeric string)
+                const newCaptcha = Math.random().toString(36).substring(2, 7).toUpperCase();
+                captchaText.textContent = newCaptcha;
+
+                // Reset input and message
+                captchaInput.value = "";
+                message.textContent = "";
+
+                // Reset position and animate the content fading back in
+                contentWrapper.style.transition = "none";
+                contentWrapper.style.transform = "translateX(10%)";
+
+                setTimeout(() => {
+                    contentWrapper.style.transition = "opacity 0.5s ease-in-out, transform 0.5s ease-in-out";
+                    contentWrapper.style.opacity = "1";
+                    contentWrapper.style.transform = "translateX(0)";
+                }, 50);
+            }, 500);
+        }
+    </script>
+</body>
+</html>
